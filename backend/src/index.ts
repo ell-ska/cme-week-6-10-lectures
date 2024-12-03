@@ -3,10 +3,15 @@ import mongoose from 'mongoose'
 import 'dotenv/config'
 
 import { postRouter } from './routes/post'
+import { authRouter } from './routes/auth'
+import { profileRouter } from './routes/profile'
 
 const app = express()
+app.use(express.json())
 
 app.use(postRouter)
+app.use(authRouter)
+app.use(profileRouter)
 
 mongoose.connect(process.env.DB_URL!).then(() => {
   const port = process.env.PORT || '8080'
