@@ -2,7 +2,9 @@ import { Albert_Sans } from 'next/font/google'
 import type { Metadata } from 'next'
 import { Toaster } from 'sonner'
 
+import { auth } from '@/lib/auth'
 import { cn } from '@/utils/classnames'
+import { AuthProvider } from '@/hooks/use-auth'
 import { QueryClientProvider } from '@/providers/query-client-provider'
 import './globals.css'
 
@@ -13,11 +15,13 @@ export const metadata: Metadata = {
   description: 'This is a practice repository for a social media app',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const user = await auth.getUser()
+
   return (
     <html lang='en'>
       <body
@@ -26,10 +30,12 @@ export default function RootLayout({
           'flex min-h-screen flex-col items-center bg-zinc-50 font-medium text-zinc-800',
         )}
       >
-        <QueryClientProvider>
-          {children}
-          <Toaster />
-        </QueryClientProvider>
+        <AuthProvider user={user}>
+          <QueryClientProvider>
+            {children}
+            <Toaster />
+          </QueryClientProvider>
+        </AuthProvider>
       </body>
     </html>
   )
