@@ -16,6 +16,13 @@ export const logInSchema = z.object({
 
 export type LogInValues = z.infer<typeof logInSchema>
 
+export const postActionSchema = z.object({
+  title: z.string().min(1, 'title is required'),
+  content: z.string().optional(),
+})
+
+export type PostValues = z.infer<typeof postActionSchema>
+
 // data
 
 export const profileSchema = z.object({
@@ -24,3 +31,15 @@ export const profileSchema = z.object({
 })
 
 export type ProfileData = z.infer<typeof profileSchema>
+
+export const postPageSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string().optional(),
+  author: z.object({
+    username: z.string(),
+    id: z.string(),
+  }),
+})
+
+export type PostPageData = z.infer<typeof postPageSchema>
