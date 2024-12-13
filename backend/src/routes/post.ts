@@ -10,22 +10,42 @@ type AuthorWithUsername = {
 }
 
 const getPosts = async (req: Request, res: Response) => {
+  // await new Promise((resolve) => setTimeout(resolve, 3000))
   try {
-    const posts = await Post.find().populate('author', 'username')
+    const limit = parseInt(req.query.limit?.toString() || '10')
+    const page = parseInt(req.query.page?.toString() || '1')
 
-    res.status(200).json(
-      posts.map((post) => {
-        const author = post.author as unknown as AuthorWithUsername
-
-        return {
-          id: post._id,
-          title: post.title,
-          author: {
-            username: author.username,
-          },
-        }
+    if (isNaN(page) || isNaN(limit)) {
+      res.status(400).json({
+        message: 'limit and page has to be valid numbers',
       })
-    )
+      return
+    }
+
+    const posts = await Post.find()
+      .populate('author', 'username')
+      .skip(limit * (page - 1))
+      .limit(limit)
+
+    const responsePosts = posts.map((post) => {
+      const author = post.author as unknown as AuthorWithUsername
+
+      return {
+        id: post._id,
+        title: post.title,
+        author: {
+          username: author.username,
+        },
+      }
+    })
+
+    const totalCount = await Post.countDocuments()
+    const totalPages = Math.ceil(totalCount / limit)
+
+    res.status(200).json({
+      posts: responsePosts,
+      nextPage: page + 1 <= totalPages ? page + 1 : null,
+    })
   } catch (error) {
     console.error(error)
     res.status(500).send()

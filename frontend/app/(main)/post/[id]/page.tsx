@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 
 import { getPost } from '@/lib/queries'
 import { auth } from '@/lib/auth'
+import { DeletePostButton } from '@/components/delete-post-button'
 
 export const revalidate = 60 * 15 // 15 min
 
@@ -28,7 +30,14 @@ export default async function PostPage({
             <span className='text-zinc-600'>{post.author.username}</span>
             <h1 className='text-2xl font-bold'>{post.title}</h1>
           </div>
-          {isAuthor && <button className='button-secondary'>delete</button>}
+          {isAuthor && (
+            <div className='flex gap-3'>
+              <Link href={`/post/${post.id}/edit`} className='button-secondary'>
+                edit
+              </Link>
+              <DeletePostButton postId={post.id} />
+            </div>
+          )}
         </header>
         <p>{post.content}</p>
       </article>

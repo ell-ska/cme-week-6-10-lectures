@@ -1,5 +1,6 @@
 import express from 'express'
 import mongoose from 'mongoose'
+import cors from 'cors'
 import 'dotenv/config'
 
 import { postRouter } from './routes/post'
@@ -8,6 +9,7 @@ import { profileRouter } from './routes/profile'
 
 const app = express()
 app.use(express.json())
+app.use(cors())
 
 app.use(postRouter)
 app.use(authRouter)
