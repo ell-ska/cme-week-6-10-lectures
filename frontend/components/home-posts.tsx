@@ -6,13 +6,16 @@ import Link from 'next/link'
 
 import { type HomepagePostsData } from '@/lib/schemas'
 import { getPosts } from '@/lib/queries'
+import { Votes } from './votes'
 
 export const HomePosts = ({
   initialData,
   limit,
+  userId,
 }: {
   initialData: HomepagePostsData
   limit: number
+  userId: string | null
 }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -26,14 +29,13 @@ export const HomePosts = ({
         pageParams: [1],
       },
       initialPageParam: 1,
-      refetchOnMount: false,
     })
 
   const currentPosts = data.pages.map((page) => page?.posts || []).flat()
 
   return (
     <section className='flex flex-col items-center gap-4'>
-      {currentPosts.map(({ id, title, author }) => (
+      {currentPosts.map(({ id, title, author, score, upvotes, downvotes }) => (
         <Link
           key={id}
           href={`/post/${id}`}
@@ -41,6 +43,13 @@ export const HomePosts = ({
         >
           <span className='text-zinc-600'>{author.username}</span>
           <h2 className='text-lg font-bold'>{title}</h2>
+          <Votes
+            postId={id}
+            userId={userId}
+            score={score}
+            upvotes={upvotes}
+            downvotes={downvotes}
+          />
         </Link>
       ))}
       <Loader

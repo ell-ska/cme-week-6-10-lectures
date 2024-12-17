@@ -1,4 +1,4 @@
-import { type Document, model, Schema, type Types } from 'mongoose'
+import { type Document, type Model, model, Schema, Types } from 'mongoose'
 
 type TComment = Document & {
   content: string
@@ -29,8 +29,8 @@ type TPost = Document & {
   content?: string
   author: Types.ObjectId
   comments: TComment[]
-  upvotes: Types.ObjectId[]
-  downvotes: Types.ObjectId[]
+  upvotes: Types.Array<Types.ObjectId>
+  downvotes: Types.Array<Types.ObjectId>
   score: number
   createdAt: Date
   updatedAt: Date
@@ -74,4 +74,49 @@ const postSchema = new Schema(
   }
 )
 
-export const Post = model<TPost>('Post', postSchema)
+type PostMethods = {
+  upvote: (userId: string) => void
+  downvote: (userId: string) => void
+}
+
+postSchema.method('upvote', function (this: TPost, userId: string) {
+  const userObjectId = new Types.ObjectId(userId)
+
+  if (this.upvotes.includes(userObjectId)) {
+    this.upvotes.pull(userObjectId)
+    return
+  }
+
+  if (this.downvotes.includes(userObjectId)) {
+    this.downvotes.pull(userObjectId)
+  }
+
+  this.upvotes.push(userObjectId)
+})
+
+postSchema.method('downvote', function (this: TPost, userId: string) {
+  const userObjectId = new Types.ObjectId(userId)
+
+  if (this.downvotes.includes(userObjectId)) {
+    this.downvotes.pull(userObjectId)
+    return
+  }
+
+  if (this.upvotes.includes(userObjectId)) {
+    this.upvotes.pull(userObjectId)
+  }
+
+  this.downvotes.push(userObjectId)
+})
+
+postSchema.pre('save', function (next) {
+  if (this.isModified('upvotes') || this.isModified('downvotes')) {
+    this.score = this.upvotes.length - this.downvotes.length
+  }
+
+  next()
+})
+
+type PostModel = Model<TPost, {}, PostMethods>
+
+export const Post = model<TPost, PostModel>('Post', postSchema)
