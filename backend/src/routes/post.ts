@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express'
-import { isValidObjectId, ObjectId } from 'mongoose'
+import { isValidObjectId, ObjectId, Types } from 'mongoose'
 
 import { Post } from '../models/post'
 import { authenticate } from '../middlewares/authenticate'
@@ -22,10 +22,66 @@ const getPosts = async (req: Request, res: Response) => {
       return
     }
 
-    const posts = await Post.find()
-      .populate('author', 'username')
-      .skip(limit * (page - 1))
-      .limit(limit)
+    // const posts = await Post.find()
+    //   .populate('author', 'username')
+    //   .skip(limit * (page - 1))
+    //   .limit(limit)
+
+    const posts = await Post.aggregate([
+      {
+        $addFields: {
+          sortValue: {
+            $divide: [
+              // value 1: score
+              // add 1 to see 0 as a positive score
+              {
+                $add: ['$score', 1],
+              },
+              // value 2: age
+              {
+                $pow: [
+                  {
+                    $add: [
+                      {
+                        $divide: [
+                          { $subtract: [new Date(), '$createdAt'] }, // age in milliseconds
+                          1000 * 60 * 60, // convert age to hours
+                        ],
+                      },
+                      // add 1 to avoid division with 0
+                      1,
+                    ],
+                  },
+                  // rececny weight
+                  // the higher the number, the faster old posts will loose rank
+                  1.5,
+                ],
+              },
+            ],
+          },
+        },
+      },
+      // sort in decending order by sortValue
+      { $sort: { sortValue: -1 } },
+      { $skip: limit * (page - 1) },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                username: 1,
+              },
+            },
+          ],
+          as: 'author',
+        },
+      },
+      { $unwind: '$author' },
+    ])
 
     const responsePosts = posts.map((post) => {
       const author = post.author as unknown as AuthorWithUsername
